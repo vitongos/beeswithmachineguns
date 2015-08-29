@@ -113,6 +113,9 @@ commands:
     attack_group.add_option('-e', '--csv', metavar="FILENAME", nargs=1,
                             action='store', dest='csv_filename', type='string', default='',
                             help="Store the distribution of results in a csv file for all completed bees (default: '').")
+    attack_group.add_option('-f', '--file', metavar="URL_FILE", nargs=1,
+                            action='store', dest='url_file', type='string', default='',
+                            help="Store random urls for multi-benchmark (default: '').")
 
     # Optional
     attack_group.add_option('-T', '--tpr', metavar='TPR', nargs=1, action='store', dest='tpr', default=None, type='float',
@@ -155,6 +158,7 @@ commands:
             cookies=options.cookies,
             headers=options.headers,
             post_file=options.post_file,
+            url_file=options.url_file,
             keep_alive=options.keep_alive,
             mime_type=options.mime_type,
             csv_filename=options.csv_filename,

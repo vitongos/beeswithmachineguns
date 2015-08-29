@@ -111,7 +111,8 @@ tar zxf siege-latest.tar.gz
 cd siege-3.1.0/
 ./configure
 make
-make install"""
+make install
+echo 'show-logfile=false' | tee -a ~/.siegerc"""
     existing_username, existing_key_name, existing_zone, instance_ids = _read_server_list()
 
     count = int(count)
@@ -315,27 +316,38 @@ def _attack(params):
 
         stdin, stdout, stderr = client.exec_command('mktemp')
         params['csv_filename'] = stdout.read().strip()
-        if params['csv_filename']:
+        """if params['csv_filename']:
             options += ' -e %(csv_filename)s' % params
         else:
             print 'Bee %i lost sight of the target (connection timed out creating csv_filename).' % params['i']
-            return None
+            return None"""
 
+        pem_file_path=_get_pem_path(params['key_name'])
         if params['post_file']:
-            pem_file_path=_get_pem_path(params['key_name'])
             os.system("scp -q -o 'StrictHostKeyChecking=no' -i %s %s %s@%s:/tmp/honeycomb" % (pem_file_path, params['post_file'], params['username'], params['instance_name']))
             options += ' -T "%(mime_type)s; charset=UTF-8" -p /tmp/honeycomb' % params
 
+        if params['url_file']:
+            pwd = os.path.dirname(__file__)
+            tmp_file = '%s/%s' % (pwd, params['url_file'])
+            os.system("cp %s /tmp/" % (tmp_file))
+            os.system("sed -i -e 's/^/%s/' /tmp/%s" % (re.escape(params["url"]), params['url_file']))
+            os.system("scp -q -o 'StrictHostKeyChecking=no' -i %s /tmp/%s %s@%s:/tmp/urls" % (pem_file_path, params['url_file'], params['username'], params['instance_name']))
+            options += ' -i -f "/tmp/%s"' % params['url_file']
+        else:
+            options += ' -b "%(url)s"' % params
+
         params['reps'] = int(float(params['num_requests']) / params['concurrent_requests'])
-				
         params['options'] = options
-        benchmark_command = 'siege -r %(reps)s -c %(concurrent_requests)s -b "%(url)s" -v' % params
+        benchmark_command = 'siege -r %(reps)s -c %(concurrent_requests)s %(options)s -v' % params
         stdin, stdout, stderr = client.exec_command(benchmark_command)
 
         response = {}
 
         ab_results = stdout.read()
         ab_summary = stderr.read()
+        print ab_results
+        print ab_summary
         ms_per_request_search = re.search('Response\ time:\s+([0-9.]+)\ sec', ab_summary)
 
         if not ms_per_request_search:
@@ -538,6 +550,7 @@ def attack(url, n, c, **options):
     post_file = options.get('post_file', '')
     keep_alive = options.get('keep_alive', False)
     basic_auth = options.get('basic_auth', '')
+    url_file = options.get('url_file', '')
 
     if csv_filename:
         try:
@@ -596,6 +609,7 @@ def attack(url, n, c, **options):
             'post_file': options.get('post_file'),
             'keep_alive': options.get('keep_alive'),
             'mime_type': options.get('mime_type', ''),
+            'url_file': options.get('url_file'),
             'tpr': options.get('tpr'),
             'rps': options.get('rps'),
             'basic_auth': options.get('basic_auth')
@@ -640,6 +654,7 @@ def attack(url, n, c, **options):
     print 'Organizing the swarm.'
     # Spin up processes for connecting to EC2 instances
     pool = Pool(len(params))
+    print params
     results = pool.map(_attack, params)
 
     summarized_results = _summarize_results(results, params, csv_filename)
