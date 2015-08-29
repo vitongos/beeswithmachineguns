@@ -1,0 +1,20 @@
+#!/bin/bash
+
+KEY_PAIR=${1:-us-east} 
+SERVERS=${2:-2} 
+SECURITY_GROUP=${3:-load-test-sg} 
+IMAGE_ID=${4:-ami-1ccae774}
+AVAILABILITY_ZONE=${5:-us-east-1a}
+SSH_USER=${6:-ec2-user}
+URL=${7:-http://192.168.1.1/test}
+
+echo ' Usage: '
+echo ' ======== '
+echo ' bees up -s '$SERVERS' -g '$SECURITY_GROUP' -k '$KEY_PAIR' -i '$IMAGE_ID' -z '$AVAILABILITY_ZONE' -l '$SSH_USER
+echo ''
+echo ' bees report'
+echo ''
+echo ' bees attack -n 100000 -c 200 -u '$URL
+echo ''
+echo ' bees down'
+echo ''
