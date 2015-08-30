@@ -1,40 +1,28 @@
-h1. Bees with Machine Guns!
+Bees with Machine Guns!
+=======================
 
 A utility for arming (creating) many bees (micro EC2 instances) to attack (load test) targets (web applications).
 
-Also, retribution for "this shameful act":http://kottke.org/10/10/tiny-catapult-for-throwing-pies-at-bees against a proud hive.
-
-h2. Dependencies
+Dependencies
+------------
 
 * Python 2.6
 * boto
 * paramiko
 
-h2. Installation for users
-
-Preferred:
-
-<pre>
-pip install beeswithmachineguns
-</pre>
-
-or, if you must:
+Installation for developers (w/ virtualenv + virtualenvwrapper)
+---------------------------------------------------------------
 
 <pre>
-easy_install beeswithmachineguns
-</pre>
-
-h2. Installation for developers (w/ virtualenv + virtualenvwrapper)
-
-<pre>
-git clone git://github.com/newsapps/beeswithmachineguns.git
+git clone git://github.com/vitongos/beeswithmachineguns.git
 cd beeswithmachineguns
 mkvirtualenv --no-site-packages bees
 easy_install pip
 pip install -r requirements.txt
 </pre>
 
-h2. Configuring AWS credentials
+Configuring AWS credentials
+---------------------------
 
 Bees uses boto to communicate with EC2 and thus supports all the same methods of storing credentials that it does.  These include declaring environment variables, machine-global configuration files, and per-user configuration files. You can read more about these options on "boto's configuration page":http://code.google.com/p/boto/wiki/BotoConfig.
 
@@ -54,31 +42,54 @@ Make sure the .boto file is only accessible by the current account:
 chmod 600 .boto
 </pre>
 
-h2. Usage
+Creación del archivo de URLs
+----------------------------
 
-A typical bees session looks something like this:
+Antes de realizar el test de carga, debe crearse un archivo de URLs aleatorias.
+ 
+El objetivo es que los tests realicen peticiones sobre un conjunto de direcciones, simulando la carga real del servidor.
 
 <pre>
-bees up -s 4 -g public -k frakkingtoasters
-bees attack -n 10000 -c 250 -u http://www.ournewwebbyhotness.com/
-bees down
+./populate-urls -e endpoint-name -c 300 -l 75
 </pre>
 
-This spins up 4 servers in security group 'public' using the EC2 keypair 'frakkingtoasters', whose private key is expected to reside at ~/.ssh/frakkingtoasters.pem.
+Se generará un archivo *beeswithmachineguns/urls* con 300 URLs aleatorias con el formato /endpoint-name/{hash}?os=YYYY&ip=ZZZZZZ.
 
-*Note*: the default EC2 security group is called 'default' and by default it locks out SSH access. I recommend creating a 'public' security group for use with the bees and explicitly opening port 22 on that group.
-
-It then uses those 4 servers to send 10,000 requests, 250 at a time, to attack OurNewWebbyHotness.com.
-
-Lastly, it spins down the 4 servers.  *Please remember to do this*--we aren't responsible for your EC2 bills.
+El valor de 'hash' estará entre 0 y 75. Los parámetros de querystring 'os' e 'ip' no son obligatorios.
 
 For complete options type:
 
 <pre>
-bees -h
+./populate-urls -h
 </pre>
 
-h2. The caveat! (PLEASE READ)
+Uso
+---
+
+Para realizar un test de carga hay que levantar la flota de servidores y lanzar el ataque:
+
+<pre>
+./bees up -s 4 -g load-test-sg -k my-keypair -i ami-1ccae774 -z us-east-1a -l ec2_user
+./bees attack -n 10000 -c 250 -u http://www.your-domain.com/
+./bees down
+</pre>
+
+Con 'bees up' se iniciarán 4 servers en el grupo de seguridad 'load-test-sg' usando el keypair 'my-keypair', que debe estar almacenada en ~/.ssh/my-keypair.pem.
+
+El tipo de instancia será 'ami-1ccae774', la zona de disponibilidad 'us-east-1a' y el usuario para la conexión SSH 'ec2_user'.
+
+Al ejecutar 'bees attack' los 4 servidores lanzarán 10000 requests, 250 concurrentes, sobre las urls aleatorias http://www.your-domain.com/endpoint-name/{hash}?os=YYYY&ip=ZZZZZZ.
+
+Por último, 'bees down' termina las instancias. **Importante: de no terminar las instancias de EC2, Amazon continuará facturando por ellas**.
+
+For complete options type:
+
+<pre>
+./bees -h
+</pre>
+
+The caveat! (PLEASE READ)
+-------------------------
 
 (The following was cribbed from our "original blog post about the bees":http://blog.apps.chicagotribune.com/2010/07/08/bees-with-machine-guns/.)
 
@@ -86,11 +97,8 @@ If you decide to use the Bees, please keep in mind the following important cavea
 
 You have been warned.
 
-h2. Bugs
-
-Please log your bugs on the "Github issues tracker":http://github.com/newsapps/beeswithmachineguns/issues.
-
-h2. Credits
+Credits
+-------
 
 The bees are a creation of the News Applications team at the Chicago Tribune--visit "our blog":http://apps.chicagotribune.com/ and read "our original post about the project":http://blog.apps.chicagotribune.com/2010/07/%2008/bees-with-machine-guns/.
 
@@ -98,6 +106,7 @@ Initial refactoring code and inspiration from "Jeff Larson":http://github.com/th
 
 Thanks to everyone who reported bugs against the alpha release.
 
-h2. License
+License
+-------
 
 MIT.

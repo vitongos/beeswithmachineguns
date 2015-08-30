@@ -15,20 +15,23 @@ def main():
 populate-urls [options]
 
 Options:
-  -c, --count		COUNT, number of different IPs to generate
-  -l, --limit		LIMIT, upper limit for hash (0 ... LIMIT)
+  -e, --endpoint	ENDPOINT, route name for generation
+  -c, --count			COUNT, number of different urls to generate
+  -l, --limit			LIMIT, upper limit for hash (0 ... LIMIT)
     """)
 		parser = OptionParser()
+		parser.add_option("-e", "--endpoint", dest="endpoint", default="positions",
+											help="route name for generation", metavar="ENDPOINT")
 		parser.add_option("-c", "--count", dest="count", default=100,
-											help="number of different IPs to generate", metavar="COUNT")
+											help="number of different urls to generate", metavar="COUNT")
 		parser.add_option("-l", "--limit", dest="limit", default=100,
 											help="upper limit for hash (0 ... LIMIT)", metavar="LIMIT")
 
 		(options, args) = parser.parse_args()
 		
-		populate(options.count, options.limit)
+		populate(options.endpoint, options.count, options.limit)
 		
-def populate(count, limit):
+def populate(endpoint, count, limit):
 		pwd = os.path.dirname(__file__)
 		url_file = '%s/beeswithmachineguns/urls' % (pwd)
 		operating_systems = ['ios', 'android', 'macox', 'windows', 'others']
@@ -38,13 +41,13 @@ def populate(count, limit):
 						o_s = random.choice (operating_systems)
 						hash = random.choice (range(0, limit))
 						if x % 11 == 0:
-								url = "/positions1/%s?os=%s" % (hash, o_s)
+								url = "/%s/%s?os=%s" % (endpoint, hash, o_s)
 						elif x % 9 == 0:
-								url = "/positions1/%s?ip=%s" % (hash,ip)
+								url = "/%s/%s?ip=%s" % (endpoint, hash,ip)
 						elif x % 7 == 0:
-								url = "/positions1/%s" % (hash)
+								url = "/%s/%s" % (endpoint, hash)
 						else:
-								url = "/positions1/%s?os=%s&ip=%s" % (hash, o_s, ip)
+								url = "/%s/%s?os=%s&ip=%s" % (endpoint, hash, o_s, ip)
 						myfile.write(url)
 						if x < count -1:
 								myfile.write('\n')
